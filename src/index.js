@@ -1,12 +1,15 @@
 import './css/styles.css';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
+const axios = require('axios').default;
 
 let name = '';
 let page = 1;
-const perPage = 150;
-const DEBOUNCE_DELAY = 300;
+const perPage = 120;
 const form = document.getElementById('search-form');
 const gallery = document.querySelector('.gallery');
 const btnMore = document.querySelector('.load-more');
+
+btnMore.classList.add('hidden');
 
 form.addEventListener('submit', searchImages);
 btnMore.addEventListener('click', loadMore);
@@ -14,35 +17,32 @@ btnMore.addEventListener('click', loadMore);
 function searchImages(e) {
   e.preventDefault();
   gallery.innerHTML = '';
+  btnMore.classList.add('hidden');
   page = 1;
   name = e.currentTarget.elements.searchQuery.value;
   renderGallery(name);
 }
 
-function loadMore(e) {
-  renderGallery(name);
-}
-
 async function fetchImages(name) {
-  const responce = await fetch(
+  const galleryObject = await axios.get(
     `https://pixabay.com/api/?key=33963578-40585d75b8e2e6d6690e20bc4&q=${name}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=${perPage}`
   );
-  if (!responce.ok) {
-    throw new Error(responce.status);
+  if (!galleryObject.status === 200) {
+    throw new Error(galleryObject.status);
   }
-  const galleryPromise = await responce.json();
-  if (galleryPromise.hits.length === 0) {
+  if (galleryObject.data.hits.length === 0) {
     return;
   }
-  limitOfShows(galleryPromise.totalHits);
+  btnMore.classList.remove('hidden');
+  limitOfShows(galleryObject.data.totalHits);
   page += 1;
-  return galleryPromise;
+  return galleryObject;
 }
 
 async function renderGallery(name) {
   try {
     const galleryObject = await fetchImages(name);
-    const galleryArray = galleryObject.hits;
+    const galleryArray = galleryObject.data.hits;
     const markup = galleryArray
       .map(
         ({
@@ -55,7 +55,7 @@ async function renderGallery(name) {
           downloads,
         }) => {
           return `<div class="photo-card">
-  <img width = 300 src="${webformatURL}" alt="${tags}" loading="lazy" />
+  <img width = 300 height = 200 src="${webformatURL}" alt="${tags}" loading="lazy" />
   <div class="info">
     <p class="info-item">
       <b>Likes: ${likes}</b>
@@ -76,14 +76,22 @@ async function renderGallery(name) {
       .join('');
     gallery.insertAdjacentHTML('beforeend', markup);
   } catch {
-    console.log(
+    btnMore.classList.add('hidden');
+    Notify.failure(
       'Sorry, there are no images matching your search query. Please try again.'
     );
   }
 }
 
+function loadMore(e) {
+  renderGallery(name);
+}
+
 function limitOfShows(limit) {
   if (page * perPage > limit) {
-    console.log('To much!!!');
+    Notify.info(
+      'We are sorry, but you have reached the end of search results.'
+    );
+    btnMore.classList.add('hidden');
   }
 }
