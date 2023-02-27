@@ -4,7 +4,7 @@ const axios = require('axios').default;
 
 let name = '';
 let page = 1;
-const perPage = 120;
+const perPage = 40;
 const form = document.getElementById('search-form');
 const gallery = document.querySelector('.gallery');
 const btnMore = document.querySelector('.load-more');
