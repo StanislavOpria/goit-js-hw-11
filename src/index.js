@@ -1,6 +1,8 @@
 import './css/styles.css';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 const axios = require('axios').default;
+const debounce = require('lodash.debounce');
+const DEBOUNCE_DELAY = 300;
 
 let name = '';
 let page = 1;
@@ -12,7 +14,7 @@ const btnMore = document.querySelector('.load-more');
 btnMore.classList.add('hidden');
 
 form.addEventListener('submit', searchImages);
-btnMore.addEventListener('click', loadMore);
+btnMore.addEventListener('click', debounce(loadMore, DEBOUNCE_DELAY));
 
 function searchImages(e) {
   e.preventDefault();
